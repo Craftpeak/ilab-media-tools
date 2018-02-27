@@ -126,7 +126,7 @@ final class Prefixer {
 			$user = wp_get_current_user();
 		}
 		$userName = '';
-		if($user->ID != 0) {
+		if($user && $user->ID != 0) {
 			$userName = sanitize_title($user->display_name);
 		}
 
