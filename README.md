@@ -1,11 +1,6 @@
-# ILAB Media Tools
+# Media Cloud by ILAB
 
-ILAB Media Tools are a suite of tools designed to enhance media handling in WordPress in a number of ways.
-
-##### Image Cropping
-ILAB Media Tools ships with the most advanced image cropping tool 
-available for WordPress, based on Chen Fengyuan's amazing Cropper 
-plugin for jQuery.
+Media Cloud by ILAB is a suite of tools designed to enhance media handling in WordPress in a number of ways.
 
 ##### Upload to S3
 Automatically copy media uploads to S3 and hosts your media directly 
@@ -20,18 +15,30 @@ and then host the media with Imgix, providing you with real-time image
 processing and automatic format delivery.  Forget ImageMagick, Imgix
 is light years ahead in quality and speed.
 
+##### Upload Directly to S3
+Directly upload your media and documents to S3, bypassing your WordPress 
+server completely.  Note, this feature requires Imgix.
+
+##### Automatically Tag and Categorize with Amazon Rekognition
+Use Amazon's latest AI tools to tag and categorize your images when uploading to S3.  With Rekognition, you can automatically detect objects, scenes, and faces in images.
+
 ##### Advanced Image Editing
-When integrating with [Imgix](https://imgix.com), ILAB Media Tools provides the most 
+When integrating with [Imgix](https://imgix.com), Media Cloud by ILAB provides the most 
 advanced WordPress image editor.  Alter contrast, saturation, vibrancy
 and over 30 other image editing operations - in real time right inside
 the WordPress admin interface!  Completely non-destructive!
 
+##### Image Cropping
+Media Cloud by ILAB ships with the most advanced image cropping tool 
+available for WordPress, based on Chen Fengyuan's amazing Cropper 
+plugin for jQuery.
+
 **Best of all you get this functionality for free.**
 
-* Advanced image cropping tool
 * Upload to S3
 * Host media from S3 or any CDN that can connect to S3
 * Integrate with Imgix media hosting
+* Advanced image cropping tool
 * Advanced image editing with saturation, contrast, auto-correct, 
   sharpen, blur and more (only when integrated with Imgix)
   
@@ -44,6 +51,32 @@ the WordPress admin interface!  Completely non-destructive!
 5. For Imgix, enter your Imgix settings in the *ILab Media Tools -> Imgix Settings* page.
 6. Once your settings are complete, use the *ILab Media Tools -> S3 Importer* to import your current media library to
    Amazon S3.
+   
+## Developer Notes
+
+If you're using Imgix, you can specify additional parameters by adding a filter for `ilab_imgix_filter_parameters`.  For example, if you wanted to 
+add blur to all of your images for some crazy reason:
+
+```php
+add_filter('ilab_imgix_filter_parameters',function($params, $size, $id, $meta){
+	$params['blur'] = 20;
+	return $params;
+}, 10, 4);
+```
+
+There are additional filters and actions that you can hook into for various purposes:
+
+| Filter | Description | Arguments |
+| :----- | :----- | :----- |
+| ilab_s3_can_calculate_srcset | Determines if the imgix tool can calculate the srcset for an img tag | None |
+| ilab_imgix_enabled | Determines if the imgix is enabled | None |
+
+| Action | Description | Arguments |
+| :----- | :----- | :----- |
+| ilab_imgix_setup | Called when imgix is setup/initialized | None |
+
+
+
 
 ## Frequently Asked Questions
 

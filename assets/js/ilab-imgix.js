@@ -1,23 +1,27 @@
 /**
- * Image Editing Module
+ * Image Editor Controller(-esque)
+ * @param {jQuery} $
+ * @param {object} settings
+ * @constructor
  */
-
 var ILabImageEdit=function($, settings){
-    console.log(settings);
+    var self=this;
 
     this.previewTimeout=null;
     this.previewsSuspended=false;
     this.parameters=[];
 
-    var self=this;
-
     this.settings=settings;
 
     this.modalContainer=$('#ilabm-container-'+settings.modal_id);
+    this.editorArea = this.modalContainer.find('.ilabm-editor-area');
     this.waitModal=this.modalContainer.find('.ilabm-preview-wait-modal');
     this.previewImage=this.modalContainer.find('.imgix-preview-image');
 
     this.presets=new ILabImgixPresets($,this,this.modalContainer);
+
+    this.focalPointEditor = new ILabFocalPointEditor($, this);
+    this.faceEditor= new ILabFaceEditor($, this);
 
     this.modalContainer.find('.imgix-button-reset-all').on('click',function(){
         self.resetAll();
@@ -62,7 +66,6 @@ var ILabImageEdit=function($, settings){
         currentValue: self.settings.size,
         tabSelected:function(tab){
             ILabModal.loadURL(tab.data('url'),true,function(response){
-                console.log(response);
                 self.bindUI(response);
             });
         }
@@ -86,7 +89,10 @@ var ILabImageEdit=function($, settings){
             postData=value.saveValue(postData);
         });
 
-        console.log(postData);
+        postData = this.focalPointEditor.save(postData);
+        postData = this.faceEditor.save(postData);
+
+        // console.log(postData);
 
         data['image_id'] = self.settings.image_id;
         data['action'] = action;
@@ -94,7 +100,7 @@ var ILabImageEdit=function($, settings){
         data['settings']=postData;
 
         $.post(ajaxurl, data, callback);
-    }
+    };
 
     /**
      * Performs the actual request for a preview to be generated
@@ -108,15 +114,31 @@ var ILabImageEdit=function($, settings){
         self.postAjax('ilab_imgix_preview',{},function(response) {
             if (response.status=='ok')
             {
-                if (self.settings.debug)
-                    console.log(response.src);
+                var sameSrc = (response.src == self.previewImage.attr('src'));
+                var didLoad = false;
 
                 self.previewImage.on('load',function(){
+                    didLoad = true;
+                    self.waitModal.addClass('is-hidden');
+                    self.hideStatus();
+                });
+
+                self.previewImage.on('error', function(){
+                    didLoad = true;
                     self.waitModal.addClass('is-hidden');
                     self.hideStatus();
                 });
 
                 self.previewImage.attr('src',response.src);
+
+                if (sameSrc) {
+                    setTimeout(function(){
+                        if (!didLoad) {
+                            self.waitModal.addClass('is-hidden');
+                            self.hideStatus();
+                        }
+                    }, 3000);
+                }
             }
             else
             {
@@ -163,6 +185,7 @@ var ILabImageEdit=function($, settings){
 
             self.previewsSuspended=false;
             ILabModal.makeClean();
+            self.buildFocalPoint();
         };
 
         if (data.src)
@@ -175,7 +198,6 @@ var ILabImageEdit=function($, settings){
     };
 
     this.bindPreset=function(preset){
-        console.log(preset);
         self.previewsSuspended=true;
         self.settings.settings=preset.settings;
 
@@ -188,13 +210,14 @@ var ILabImageEdit=function($, settings){
         self.preview();
     };
 
-
     this.apply=function(){
         self.displayStatus('Saving adjustments ...');
 
         self.postAjax('ilab_imgix_save', {}, function(response) {
             self.hideStatus();
             ILabModal.makeClean();
+
+            alert("Adjustments have been saved.");
         });
     };
 
@@ -215,5 +238,19 @@ var ILabImageEdit=function($, settings){
     this.hideStatus=function(){
         self.modalContainer.find('.ilabm-status-container').addClass('is-hidden');
     };
+
+
+    $(document).on('edges-selected', function(e){
+        $(document).trigger('change-entropy', [false]);
+        this.faceEditor.disable();
+        this.focalPointEditor.disable();
+    }.bind(this));
+
+
+    $(document).on('entropy-selected', function(e){
+        $(document).trigger('change-edges', [false]);
+        this.faceEditor.disable();
+        this.focalPointEditor.disable();
+    }.bind(this));
 };
 

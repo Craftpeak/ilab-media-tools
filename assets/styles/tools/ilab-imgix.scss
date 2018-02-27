@@ -7,6 +7,7 @@
   max-width: 100%;
   max-height: 100%;
   display: block;
+  pointer-events: none;
 }
 
 .imgix-parameters-container {
@@ -290,27 +291,75 @@
   box-shadow: inset 1px 1px 1px rgba(0,0,0,0.25), 0 1px 0 rgba(0, 0, 0, 0.15) !important;
 }
 .imgix-pill-enhance {
-  background-image: url(../img/ilab-imgix-magic-wand-black.png);
-  background-repeat: no-repeat;
-  background-position: 12px 8px;
-  padding-left: 40px;
-  background-size: 20px 20px;
+  & > span.icon {
+    background-image: url(../img/ilab-imgix-magic-wand-black.svg);
+  }
 }
 
 .imgix-pill-enhance.pill-selected {
-  background-image: url(../img/ilab-imgix-magic-wand-white.png);
+  & > span.icon {
+    background-image: url(../img/ilab-imgix-magic-wand-white.svg);
+  }
 }
 
 .imgix-pill-redeye {
-  background-image: url(../img/ilab-imgix-red-eye-black.png);
-  background-repeat: no-repeat;
-  background-position: 12px 8px;
-  padding-left: 40px;
-  background-size: 20px 20px;
+  & > span.icon {
+    background-image: url(../img/ilab-imgix-red-eye-black.svg);
+  }
 }
 
 .imgix-pill-redeye.pill-selected {
-  background-image: url(../img/ilab-imgix-red-eye-white.png);
+  & > span.icon {
+    background-image: url(../img/ilab-imgix-red-eye-white.svg);
+  }
+}
+
+.imgix-pill-usefaces {
+  & > span.icon {
+    background-image: url(../img/ilab-imgix-faces-black.svg);
+  }
+}
+
+.imgix-pill-usefaces.pill-selected {
+  & > span.icon {
+    background-image: url(../img/ilab-imgix-faces-white.svg);
+  }
+}
+
+.imgix-pill-focalpoint {
+  & > span.icon {
+    background-image: url(../img/ilab-imgix-focalpoint-black.svg);
+  }
+}
+
+.imgix-pill-focalpoint.pill-selected {
+  & > span.icon {
+    background-image: url(../img/ilab-imgix-focalpoint-white.svg);
+  }
+}
+
+.imgix-pill-entropy {
+  & > span.icon {
+    background-image: url(../img/ilab-imgix-chaos-black.svg);
+  }
+}
+
+.imgix-pill-entropy.pill-selected {
+  & > span.icon {
+    background-image: url(../img/ilab-imgix-chaos-white.svg);
+  }
+}
+
+.imgix-pill-edges {
+  & > span.icon {
+    background-image: url(../img/ilab-imgix-edges-black.svg);
+  }
+}
+
+.imgix-pill-edges.pill-selected {
+  & > span.icon {
+    background-image: url(../img/ilab-imgix-edges-white.svg);
+  }
 }
 
 .imgix-preset-make-default-container {
@@ -342,4 +391,46 @@
   font-size: 11px;
   padding: 1px;
   text-align: right;
+}
+
+.ilabm-focal-point-icon {
+  position: absolute;
+  background-image: url(../img/ilab-imgix-focalpoint-icon.svg);
+  width: 24px;
+  height: 24px;
+  background-size: contain;
+  pointer-events: none;
+}
+
+.ilab-face-outline {
+  position: absolute;
+  border: 3px solid white;
+  filter: drop-shadow(0px 2px 3px black);
+  opacity: 0.33;
+  z-index: 999;
+  cursor: pointer;
+
+  span {
+    display: block;
+    position: absolute;
+    background-color: white;
+    color: black;
+    font-size: 9px;
+    width: 12px;
+    height: 12px;
+    text-align: center;
+    font-weight: bold;
+    line-height: 1;
+  }
+
+  &.active {
+    opacity: 1.0;
+    z-index: 1000;
+  }
+}
+
+.ilab-all-faces-outline {
+  position: absolute;
+  border: 3px solid white;
+  filter: drop-shadow(0px 2px 3px black);
 }

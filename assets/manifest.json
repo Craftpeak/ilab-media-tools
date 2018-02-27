@@ -6,6 +6,36 @@
         "js/ilab-modal.js"
       ]
     },
+    "ilab-media-upload.js": {
+      "files": [
+        "js/ilab-media-upload.js"
+      ]
+    },
+    "ilab-media-storage.js": {
+      "files": [
+        "js/ilab-media-storage.js"
+      ]
+    },
+    "ilab-media-setup.js": {
+      "files": [
+        "js/ilab-media-setup.js"
+      ]
+    },
+    "ilab-media-upload-s3.js": {
+      "files": [
+        "js/ilab-media-upload-s3.js"
+      ]
+    },
+    "ilab-media-upload-other-s3.js": {
+      "files": [
+        "js/ilab-media-upload-other-s3.js"
+      ]
+    },
+    "ilab-media-upload-google.js": {
+      "files": [
+        "js/ilab-media-upload-google.js"
+      ]
+    },
     "ilab-media-tools.js": {
       "files": [
         "vendor/cropper/dist/cropper.js",
@@ -19,6 +49,8 @@
         "js/components/imgix-pillbox.js",
         "js/ilab-imgix-presets.js",
         "js/ilab-sidebar-tabs.js",
+        "js/editors/imgix-faces.js",
+        "js/editors/imgix-focalpoint.js",
         "js/ilab-imgix.js"
       ],
       "main": true
@@ -26,11 +58,25 @@
     "ilab-modal.min.css": {
       "files": "styles/ilab-modal.scss"
     },
+    "ilab-media-setup.min.css": {
+      "files": "styles/ilab-media-setup.scss"
+    },
+    "ilab-media-upload.min.css": {
+      "files": "styles/ilab-media-upload.scss"
+    },
     "ilab-media-tools.min.css": {
       "files": [
         "vendor/cropper/dist/cropper.css",
         "styles/ilab-media-tools.scss"
       ]
+    },
+    "ilab-media-tools.settings.min.css": {
+      "files": [
+        "styles/ilab-settings.scss"
+      ]
+    },
+    "images": {
+      "files": ["img/**/*"]
     }
   },
   "paths": {
@@ -38,6 +84,6 @@
     "dist": "../public/"
   },
   "config": {
-    "devUrl": "http://dev.interfacelab.io"
+    "devUrl": "http://example.dev"
   }
 }

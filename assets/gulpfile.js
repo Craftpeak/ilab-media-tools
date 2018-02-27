@@ -8,17 +8,16 @@ var flatten      = require('gulp-flatten');
 var gulp         = require('gulp');
 var gulpif       = require('gulp-if');
 var imagemin     = require('gulp-imagemin');
-var jshint       = require('gulp-jshint');
 var lazypipe     = require('lazypipe');
 var less         = require('gulp-less');
 var merge        = require('merge-stream');
 var cssNano      = require('gulp-cssnano');
 var plumber      = require('gulp-plumber');
-var rev          = require('gulp-rev');
 var runSequence  = require('run-sequence');
 var sass         = require('gulp-sass');
 var sourcemaps   = require('gulp-sourcemaps');
 var uglify       = require('gulp-uglify');
+var babelMinify  = require('gulp-babel-minify');
 
 // See https://github.com/austinpray/asset-builder
 var manifest = require('asset-builder')('./manifest.json');
@@ -52,8 +51,6 @@ var project = manifest.getProjectGlobs();
 
 // CLI options
 var enabled = {
-    // Enable static asset revisioning when `--production`
-    rev: argv.production,
     // Disable source maps when `--production`
     maps: !argv.production,
     // Fail styles task on error when `--production`
@@ -63,9 +60,6 @@ var enabled = {
     // Strip debug statments from javascript when `--production`
     stripJSDebug: argv.production
 };
-
-// Path to the compiled assets manifest in the dist directory
-var revManifest = path.dist + 'assets.json';
 
 // ## Reusable Pipelines
 // See https://github.com/OverZealous/lazypipe
@@ -108,9 +102,6 @@ var cssTasks = function(filename) {
             safe: true
         })
         .pipe(function() {
-            return gulpif(enabled.rev, rev());
-        })
-        .pipe(function() {
             return gulpif(enabled.maps, sourcemaps.write('.', {
                 sourceRoot: 'css/'
             }));
@@ -130,13 +121,10 @@ var jsTasks = function(filename) {
             return gulpif(enabled.maps, sourcemaps.init());
         })
         .pipe(concat, filename)
-        .pipe(uglify, {
-            compress: {
-                'drop_debugger': enabled.stripJSDebug
-            }
-        })
-        .pipe(function() {
-            return gulpif(enabled.rev, rev());
+        .pipe(babelMinify, {
+            // compress: {
+            //   'drop_debugger': enabled.stripJSDebug
+            // }
         })
         .pipe(function() {
             return gulpif(enabled.maps, sourcemaps.write('.', {
@@ -152,11 +140,7 @@ var writeToManifest = function(directory) {
     return lazypipe()
         .pipe(gulp.dest, path.dist + directory)
         .pipe(browserSync.stream, {match: '**/*.{js,css}'})
-        .pipe(rev.manifest, revManifest, {
-            base: path.dist,
-            merge: true
-        })
-        .pipe(gulp.dest, path.dist)();
+        .pipe(gulp.dest, path.dist + directory)();
 };
 
 // ## Gulp tasks
@@ -166,7 +150,7 @@ var writeToManifest = function(directory) {
 // `gulp styles` - Compiles, combines, and optimizes Bower CSS and project CSS.
 // By default this task will only log a warning if a precompiler error is
 // raised. If the `--production` flag is set: this task will fail outright.
-gulp.task('styles', ['wiredep'], function() {
+gulp.task('styles', function() {
     var merged = merge();
     manifest.forEachDependency('css', function(dep) {
         var cssTasksInstance = cssTasks(dep.name);
@@ -186,7 +170,7 @@ gulp.task('styles', ['wiredep'], function() {
 // ### Scripts
 // `gulp scripts` - Runs JSHint then compiles, combines, and optimizes Bower JS
 // and project JS.
-gulp.task('scripts', ['jshint'], function() {
+gulp.task('scripts', function() {
     var merged = merge();
     manifest.forEachDependency('js', function(dep) {
         merged.add(
@@ -208,6 +192,14 @@ gulp.task('fonts', function() {
         .pipe(browserSync.stream());
 });
 
+// ### Icons
+// `gulp icons` - Grabs font-awesome
+gulp.task('icons', function() {
+    return gulp.src(path.bowerDir + '/font-awesome/fonts/*')
+        .pipe(gulp.dest(path.dist + 'fonts'))
+        .pipe(browserSync.stream());
+});
+
 // ### Images
 // `gulp images` - Run lossless compression on all the images.
 gulp.task('images', function() {
@@ -219,17 +211,6 @@ gulp.task('images', function() {
         }))
         .pipe(gulp.dest(path.dist + 'img'))
         .pipe(browserSync.stream());
-});
-
-// ### JSHint
-// `gulp jshint` - Lints configuration JSON and project JS.
-gulp.task('jshint', function() {
-    return gulp.src([
-        'bower.json', 'gulpfile.js'
-    ].concat(project.js))
-        .pipe(jshint())
-        .pipe(jshint.reporter('jshint-stylish'))
-        .pipe(gulpif(enabled.failJSHint, jshint.reporter('fail')));
 });
 
 // ### Clean
@@ -244,15 +225,14 @@ gulp.task('clean', require('del').bind(null, [path.dist]));
 // See: http://www.browsersync.io
 gulp.task('watch', function() {
     browserSync.init({
-        files: ['../views/**/*.php', '../views/**/*.twig', '*.php'],
+        files: ['../resources/views/**/*.php'],
         proxy: config.devUrl,
+        ghostMode: false,
         snippetOptions: {
-            whitelist: ['/wp-admin/admin-ajax.php'],
-            blacklist: ['/wp-admin/**']
         }
     });
-    gulp.watch([path.source + 'css/**/*'], ['styles']);
-    gulp.watch([path.source + 'js/**/*'], ['jshint', 'scripts']);
+    gulp.watch([path.source + 'styles/**/*'], ['styles']);
+    gulp.watch([path.source + 'js/**/*'], ['scripts']);
     gulp.watch([path.source + 'fonts/**/*'], ['fonts']);
     gulp.watch([path.source + 'img/**/*'], ['images']);
     gulp.watch(['bower.json', 'manifest.json'], ['build']);
@@ -264,22 +244,10 @@ gulp.task('watch', function() {
 gulp.task('build', function(callback) {
     runSequence('styles',
         'scripts',
-        ['fonts', 'images'],
+        ['fonts', 'images', 'icons'],
         callback);
 });
 
-// ### Wiredep
-// `gulp wiredep` - Automatically inject Less and Sass Bower dependencies. See
-// https://github.com/taptapship/wiredep
-gulp.task('wiredep', function() {
-    var wiredep = require('wiredep').stream;
-    return gulp.src(project.css)
-        .pipe(wiredep())
-        .pipe(changed(path.source + 'css', {
-            hasChanged: changed.compareSha1Digest
-        }))
-        .pipe(gulp.dest(path.source + 'css'));
-});
 
 // ### Gulp
 // `gulp` - Run a complete build. To compile for production run `gulp --production`.

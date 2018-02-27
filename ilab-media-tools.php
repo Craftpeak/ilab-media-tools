@@ -1,11 +1,11 @@
 <?php
 /*
-Plugin Name: ILAB Media Tools
+Plugin Name: Media Cloud
 Plugin URI: http://interfacelab.com/media-tools
-Description: Complete media management tools
-Author: Jon Gilkison
-Version: 1.1.1
-Author URI: http://interfacelab.com
+Description: Automatically upload media to Amazon S3 and integrate with Imgix, a real-time image processing CDN.  Boosts site performance and simplifies workflows.
+Author: interfacelab
+Version: 2.1.0
+Author URI: http://interfacelab.io
 */
 
 // Copyright (c) 2016 Interfacelab LLC. All rights reserved.
@@ -41,9 +41,22 @@ if (is_plugin_active('amazon-s3-and-cloudfront/wordpress-s3.php')) {
 
 	add_action( 'admin_notices', function () {
 		?>
-		<div class="notice notice-error is-dismissible">
-			<p><?php _e( 'ILAB Media Tools cannot be activated the same time as the <strong>Offload S3</strong>.  Please deactive one before activating the other.', 'ilab-media-tools' ); ?></p>
+		<div class="notice notice-error">
+			<p><?php _e( 'Media Cloud cannot be activated the same time as the <strong>Offload S3</strong>.  Please deactive one before activating the other.', 'ilab-media-tools' ); ?></p>
 		</div>
+		<?php
+	} );
+	return;
+}
+
+if (is_plugin_active('wp-stateless/wp-stateless-media.php')) {
+	deactivate_plugins( plugin_basename( __FILE__ ) );
+
+	add_action( 'admin_notices', function () {
+		?>
+        <div class="notice notice-error">
+            <p><?php _e( 'Media Cloud cannot be activated the same time as the <strong>WP-Stateless</strong>.  Please deactive one before activating the other.', 'ilab-media-tools' ); ?></p>
+        </div>
 		<?php
 	} );
 	return;
@@ -51,10 +64,12 @@ if (is_plugin_active('amazon-s3-and-cloudfront/wordpress-s3.php')) {
 
 // Directory defines
 define('ILAB_TOOLS_DIR',dirname(__FILE__));
+define('ILAB_CONFIG_DIR',ILAB_TOOLS_DIR.'/config');
 define('ILAB_HELPERS_DIR',ILAB_TOOLS_DIR.'/helpers');
 define('ILAB_CLASSES_DIR',ILAB_TOOLS_DIR.'/classes');
 define('ILAB_VENDOR_DIR',ILAB_TOOLS_DIR.'/vendor');
 define('ILAB_VIEW_DIR',ILAB_TOOLS_DIR.'/views');
+define('ILAB_PLUGIN_NAME', plugin_basename(__FILE__));
 
 // URL defines for CSS/JS
 $plug_url = plugin_dir_url( __FILE__ );
@@ -68,11 +83,25 @@ if (file_exists(ILAB_VENDOR_DIR.'/autoload.php')) {
 }
 
 // Helper functions
-require_once('helpers/ilab-media-tool-helpers.php');
-require_once('helpers/ilab-media-tool-view.php');
 require_once('helpers/ilab-media-tool-wordpress-helpers.php');
 require_once('helpers/ilab-media-tool-geometry-helpers.php');
 
-require_once('classes/ilab-media-tools-manager.php');
-register_activation_hook(__FILE__,[ILabMediaToolsManager::instance(),'install']);
-register_deactivation_hook(__FILE__,[ILabMediaToolsManager::instance(),'uninstall']);
+// Register storage drivers
+\ILAB\MediaCloud\Cloud\Storage\StorageManager::registerDriver('s3', \ILAB\MediaCloud\Cloud\Storage\Driver\S3\S3Storage::class);
+\ILAB\MediaCloud\Cloud\Storage\StorageManager::registerDriver('minio', \ILAB\MediaCloud\Cloud\Storage\Driver\S3\MinioStorage::class);
+\ILAB\MediaCloud\Cloud\Storage\StorageManager::registerDriver('wasabi', \ILAB\MediaCloud\Cloud\Storage\Driver\S3\WasabiStorage::class);
+\ILAB\MediaCloud\Cloud\Storage\StorageManager::registerDriver('do', \ILAB\MediaCloud\Cloud\Storage\Driver\S3\DigitalOceanStorage::class);
+\ILAB\MediaCloud\Cloud\Storage\StorageManager::registerDriver('other-s3', \ILAB\MediaCloud\Cloud\Storage\Driver\S3\OtherS3Storage::class);
+\ILAB\MediaCloud\Cloud\Storage\StorageManager::registerDriver('google', \ILAB\MediaCloud\Cloud\Storage\Driver\Google\GoogleStorage::class);
+\ILAB\MediaCloud\Cloud\Storage\StorageManager::registerDriver('backblaze', \ILAB\MediaCloud\Cloud\Storage\Driver\Backblaze\BackblazeStorage::class);
+
+// Make sure the NoticeManager is initialized
+\ILAB\MediaCloud\Utilities\NoticeManager::instance();
+
+register_activation_hook(__FILE__,[ \ILAB\MediaCloud\Tools\ToolsManager::instance(), 'install']);
+register_deactivation_hook(__FILE__,[ \ILAB\MediaCloud\Tools\ToolsManager::instance(), 'uninstall']);
+
+if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+	\ILAB\MediaCloud\CLI\Storage\StorageCommands::Register();
+	\ILAB\MediaCloud\CLI\Rekognition\RekognitionCommands::Register();
+}
