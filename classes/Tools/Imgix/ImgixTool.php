@@ -244,6 +244,10 @@ class ImgixTool extends ToolBase {
 			unset($params['auto']);
 		}
 
+		if (isset($params['flip']) && (strpos($params['flip'], ',') > 0)) {
+		    $params['flip'] = 'hv';
+        }
+
 		if(!$format) {
 			if($this->autoCompress && $this->autoFormat) {
 				$auto[] = 'compress';
@@ -428,6 +432,10 @@ class ImgixTool extends ToolBase {
 		}
 
 		$mimetype = get_post_mime_type($id);
+
+        if (!$this->renderPDF && ($mimetype == 'application/pdf')) {
+            return false;
+        }
 
 		$meta = wp_get_attachment_metadata($id);
 		if(!$meta || empty($meta)) {
