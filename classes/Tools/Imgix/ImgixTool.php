@@ -664,7 +664,7 @@ class ImgixTool extends ToolBase {
             $w = (isset($sizeInfo['width'])) ? $sizeInfo['width'] : 10000;
             $h = (isset($sizeInfo['height'])) ? $sizeInfo['height'] : 10000;
 
-			$newSize = sizeToFitSize($mw, $mh, $w, $h);
+			$newSize = sizeToFitSize($w, $h, $mw, $mh);
 			$params['w'] = $newSize[0];
 			$params['h'] = $newSize[1];
 			$params['fit'] = 'scale';
