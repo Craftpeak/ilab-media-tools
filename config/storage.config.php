@@ -13,11 +13,40 @@
 if (!defined('ABSPATH')) { header('Location: /'); die; }
 
 return [
+    "name" => "Storage",
 	"title" => "Storage",
 	"description" => "Automatically uploads media to Amazon S3, Google Cloud Storage, Backblaze, DigitalOcean Spaces and others.",
 	"class" => "ILAB\\MediaCloud\\Tools\\Storage\\StorageTool",
 	"env" => "ILAB_MEDIA_S3_ENABLED",
 	"dependencies" => [],
+    "uselessPlugins" => [
+        "Imagify" => [
+            "plugin" => "imagify/imagify.php",
+            "description" => "This image optimizer attempts to optimize images in the background, after the upload has happened.  This is incompatible with how Media Cloud works."
+        ],
+        "EWWW Image Optimizer" => [
+            "plugin" => "ewww-image-optimizer/ewww-image-optimizer.php",
+            "description" => "This image optimizer attempts to optimize images in the background, after the upload has happened.  This is incompatible with how Media Cloud works."
+        ],
+        "ShortPixel Image Optimizer" => [
+            "plugin" => "shortpixel-image-optimiser/wp-shortpixel.php",
+            "description" => "This image optimizer attempts to optimize images in the background, after the upload has happened.  This is incompatible with how Media Cloud works."
+        ],
+        "Smush" => [
+            "plugin" => "wp-smushit/wp-smush.php",
+            "description" => "This image optimizer attempts to optimize images in the background, after the upload has happened.  This is incompatible with how Media Cloud works."
+        ],
+        "NextGEN Gallery" => [
+            "plugin" => "nextgen-gallery/nggallery.php",
+            "description" => "NextGEN Gallery has their own media upload system that works outside of the WordPress one.  Obviously, this is not compatible with Media Cloud.  To be honest, we can't figure out why they do it this way and their codebase is too gnarly to untangle.  This plugin DOES work, but the media will be hosted on your WordPress server and not on S3 or Imgix."
+        ],
+    ],
+    "badPlugins" => [
+        "MetaSlider" => [
+            "plugin" => "ml-slider/ml-slider.php",
+            "description" => "This plugin rolls their own non-standard image resizing functionality which is incompatible with Media Cloud. They should be using WordPress's <code>image_downsize()</code> function."
+        ]
+    ],
 	"settings" => [
 		"title" => "Storage Settings",
 		"menu" => "Storage Settings",

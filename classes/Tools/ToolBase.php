@@ -18,6 +18,7 @@ namespace ILAB\MediaCloud\Tools;
 
 use function ILAB\MediaCloud\Utilities\arrayPath;
 use ILAB\MediaCloud\Utilities\EnvironmentOptions;
+use ILAB\MediaCloud\Utilities\NoticeManager;
 use ILAB\MediaCloud\Utilities\View;
 
 
@@ -38,6 +39,12 @@ abstract class ToolBase {
      * @var string
      */
     public  $toolName;
+
+    /**
+     * Determines if bad plugins are installed.
+     * @var bool
+     */
+    protected $badPluginsInstalled = false;
 
     /**
      * Tool manager that owns this tool's admin
@@ -120,6 +127,89 @@ abstract class ToolBase {
 	    });
     }
 
+    private function generateDeactivateLink($pluginName, $plugin) {
+        $plugin = str_replace( '\/', '%2F', $plugin );
+
+        $url = sprintf( admin_url( 'plugins.php?action=deactivate&plugin=%s&plugin_status=all&paged=1&s' ), $plugin );
+        $_REQUEST['plugin'] = $plugin;
+        $url = wp_nonce_url( $url,  'deactivate-plugin_' . $plugin );
+        return $url;
+    }
+
+    protected function testForBadPlugins() {
+        if (!$this->enabled()) {
+            return;
+        }
+
+        if (isset($this->toolInfo['badPlugins'])) {
+            $installedBad = [];
+            foreach($this->toolInfo['badPlugins'] as $name => $plugin) {
+                if (is_plugin_active($plugin['plugin'])) {
+                    $this->badPluginsInstalled = true;
+                    $installedBad[$name] = $plugin;
+                }
+            }
+
+            if (count($installedBad) > 0) {
+                add_action( 'admin_notices', function () use ($installedBad) {
+                    ?>
+                    <div class="notice notice-error" style="padding:10px;">
+                        <div style="text-transform: uppercase; font-weight:bold; opacity: 0.8; margin-bottom: 0; padding-bottom: 0">Media Cloud</div>
+                        <p><?php echo "The following plugins don't work with Media Cloud ".$this->toolInfo['name']." features and can cause serious issues.  Media Cloud ".$this->toolInfo['name']." features have been disabled until these plugins have been deactivated:" ?></p>
+                        <?php $this->generatePluginTable($installedBad) ?>
+                    </div>
+                    <?php
+                } );
+            }
+        }
+    }
+
+    protected function testForUselessPlugins() {
+        if (!$this->enabled()) {
+            return;
+        }
+
+        if (isset($this->toolInfo['uselessPlugins'])) {
+            $installedBad = [];
+            $installedBadNames = [];
+
+            foreach($this->toolInfo['uselessPlugins'] as $name => $plugin) {
+                if (is_plugin_active($plugin['plugin'])) {
+                    $installedBad[$name] = $plugin;
+                    $installedBadNames[] = sanitize_title($name);
+                }
+            }
+
+            if (count($installedBad) > 0) {
+                $dismissibleID = 'useless-plugins-'.implode('-', $installedBadNames).'-7';
+                if (NoticeManager::instance()->isAdminNoticeActive($dismissibleID)) {
+                    add_action( 'admin_notices', function () use ($installedBad, $dismissibleID) {
+                        ?>
+                        <div data-dismissible="<?php echo $dismissibleID ?>" class="notice notice-warning is-dismissible" style="padding:10px;">
+                            <div style="text-transform: uppercase; font-weight:bold; opacity: 0.8; margin-bottom: 0; padding-bottom: 0">Media Cloud</div>
+                            <p>The following plugins don't work well with <?php echo $this->toolInfo['name'] ?> or they don't work as you might expect they should.  Consider deactivating them or finding an alternative that works better:</p>
+                            <?php $this->generatePluginTable($installedBad) ?>
+                        </div>
+                        <?php
+                    } );
+                }
+            }
+        }
+    }
+
+    private function generatePluginTable($installedBad) {
+        ?>
+        <ul style="padding: 15px; background-color: #EAEAEA;">
+            <?php foreach($installedBad as $name => $plugin) : ?>
+                <li style="margin-bottom: 10px;">
+                    <div style="display:flex; align-items: center; font-weight:bold; margin-bottom: 10px;"><?php echo $name ?> <a style="margin-left: 15px;" class="button button-small" href="<?php echo $this->generateDeactivateLink($name, $plugin['plugin'])?>">Deactivate</a></div>
+                    <cite><?php echo $plugin['description'] ?></cite>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php
+    }
+
     /**
      * Perform any setup
      */
@@ -148,6 +238,10 @@ abstract class ToolBase {
      */
     public function enabled()
     {
+        if ($this->badPluginsInstalled) {
+            return false;
+        }
+
     	$env = ($this->env_variable) ? getenv($this->env_variable) : false;
         $enabled=get_option("ilab-media-tool-enabled-$this->toolName", $env);
 

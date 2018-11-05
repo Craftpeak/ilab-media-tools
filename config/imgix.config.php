@@ -13,6 +13,7 @@
 if (!defined('ABSPATH')) { header('Location: /'); die; }
 
 return [
+    "name" => "Imgix",
 	"title" => "Imgix Support",
 	"description" => "Serves images through imgix.com",
 	"class" => "ILAB\\MediaCloud\\Tools\\Imgix\\ImgixTool",
@@ -24,6 +25,12 @@ return [
 	"helpers" => [
 		"ilab-imgix-helpers.php"
 	],
+    "badPlugins" => [
+        "BuddyPress" => [
+            "plugin" => "buddypress/bp-loader.php",
+            "description" => "Uploading profile or cover images results in broken images."
+        ]
+    ],
 	"settings" => [
 		"title" => "Imgix Settings",
 		"menu" => "Imgix Settings",
